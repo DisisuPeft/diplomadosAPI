@@ -1,15 +1,39 @@
 from myapps.authentication.models import UserCustomize, Roles, Permissions
 from rest_framework import serializers
-
 from myapps.perfil.models import Profile
 from myapps.perfil.serializers import ProfileSerializer
+from django.db import transaction
 
+class RoleCustomizeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Roles
+        fields = ["id", "name"]
+
+        def create(self, validated_data):
+            role = Roles.objects.create(
+                name=validated_data['name'],
+            )
+            role.save()
+            return role
+
+
+class PermissionCustomizeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Permissions
+        fields = ["id", "name"]
+        def create(self, validated_data):
+            permission = Permissions.objects.create(
+                name=validated_data['name'],
+            )
+            permission.save()
+            return permission
 
 class UserCustomizeSerializer(serializers.ModelSerializer):
-    profile = ProfileSerializer()
+    profile = ProfileSerializer(required=False)
+    role = serializers.IntegerField(write_only=True, required=False)
     class Meta:
         model = UserCustomize
-        fields = ["id", "email", "password", "profile"]
+        fields = ["id", "email", "password", "profile", "role"]
 
     email = serializers.CharField(
         required=True,
@@ -27,11 +51,29 @@ class UserCustomizeSerializer(serializers.ModelSerializer):
         }
     )
 
+
     def create(self, validated_data):
-        user = UserCustomize.objects.create_user(**validated_data)
-        return user
-    def update(self, instance, validated_data):
-        instance.perfil_id = validated_data['id']
+        role_id = validated_data.pop('role', None)
+        print(role_id)
+        try:
+            with transaction.atomic():
+
+                user = UserCustomize.objects.create_user(
+                    email=validated_data['email'],
+                    password=validated_data['password'],
+                )
+                if role_id is not None:
+                    try:
+                        role = Roles.objects.get(id=role_id)
+                        user.roleID.add(role)
+                    except Roles.DoesNotExist:
+                        raise serializers.ValidationError("El rol especificado no existe")
+                return user
+        except Exception as e:
+            raise serializers.ValidationError(str(e))
+
+    # def update(self, instance, validated_data):
+        # instance.perfil_id = validated_data['id']
 
     def validate_email(self, value):
         if UserCustomize.objects.filter(email=value).exists():
@@ -39,28 +81,3 @@ class UserCustomizeSerializer(serializers.ModelSerializer):
         return value
 
 
-
-class RoleCustomizeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Roles
-        fields = '__all__'
-
-        def create(self, validated_data):
-            role = Roles.objects.create(
-                name=validated_data['name'],
-            )
-            role.save()
-            return role
-
-
-class PermissionCustomizeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Permissions
-        fields = '__all__'
-        def create(self, validated_data):
-            permission = Permissions.objects.create(
-                name=validated_data['name'],
-                role=validated_data['role'],
-            )
-            permission.save()
-            return permission

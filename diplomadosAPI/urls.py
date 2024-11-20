@@ -17,9 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from myapps.authentication import views as auth_views
+from myapps.perfil import views as perfil_views
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
     path('register', auth_views.register, name='register'),
     path('login', auth_views.login, name='login'),
+
+    path('perfil', perfil_views.getprofile, name='perfil'),
 ]
