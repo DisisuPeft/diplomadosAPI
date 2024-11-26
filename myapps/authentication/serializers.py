@@ -3,6 +3,23 @@ from rest_framework import serializers
 from myapps.perfil.models import Profile
 from myapps.perfil.serializers import ProfileSerializer
 from django.db import transaction
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth import authenticate
+from rest_framework import exceptions
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    username_field = 'email'
+
+    def validate(self, attrs):
+        credentials = {
+            'email': attrs.get('email'),
+            'password': attrs.get('password')
+        }
+        user = authenticate(**credentials)
+        if user: 
+            if not user.is_active:
+                raise exceptions.AuthenticationFailed('User is deactivated')
+
 
 class RoleCustomizeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,7 +71,7 @@ class UserCustomizeSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         role_id = validated_data.pop('role', None)
-        print(role_id)
+        # print(role_id)
         try:
             with transaction.atomic():
 
