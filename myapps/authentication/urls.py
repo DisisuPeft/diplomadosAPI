@@ -5,7 +5,8 @@ from .views import (
     CustomTokenRefreshView,
     CustomTokenVerifyView,
     LogoutView,
-    RegisterView
+    RegisterView,
+    ProfileView
 )
 
 urlpatterns = [
@@ -19,4 +20,7 @@ urlpatterns = [
     path('auth/verify/', CustomTokenVerifyView.as_view()),
     path('auth/register/', RegisterView.as_view()),
     path('logout/', LogoutView.as_view()),
+
+
+    path('auth/user/', ProfileView.as_view()),
 ]

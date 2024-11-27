@@ -46,11 +46,12 @@ class PermissionCustomizeSerializer(serializers.ModelSerializer):
             return permission
 
 class UserCustomizeSerializer(serializers.ModelSerializer):
-    profile = ProfileSerializer(required=False)
-    role = serializers.IntegerField(write_only=True, required=False)
+    profile = ProfileSerializer(required=False) #para que me devuelva al usuario
+    role = serializers.IntegerField(required=False) #para que pueda guardar el role como numero
+    roleID = RoleCustomizeSerializer(many=True, required=False) #para devolver el rol en la respuesta
     class Meta:
         model = UserCustomize
-        fields = ["id", "email", "password", "profile", "role"]
+        fields = ["id", "email", "password", "profile", "role", "roleID"]
 
     email = serializers.CharField(
         required=True,

@@ -1,7 +1,9 @@
 from rest_framework import serializers
 from myapps.perfil.models import Profile
+# from myapps.authentication.serializers import UserCustomizeSerializer
 
 class ProfileSerializer(serializers.ModelSerializer):
+    # user = serializers.IntegerField(write_only=True, required=False)
     class Meta:
         model = Profile
         fields = ["nombre", "apellidoP", "apellidoM", "user"]

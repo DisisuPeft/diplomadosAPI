@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from django.utils.decorators import method_decorator #importante
 from django.shortcuts import render
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from myapps.authentication.serializers import UserCustomizeSerializer
@@ -23,6 +23,7 @@ from rest_framework_simplejwt.views import (
 )
 from django.conf import settings
 from rest_framework.views import APIView
+from myapps.authentication.permissions import HasRoleWithRoles
 # Create your views here.
 
 
@@ -119,11 +120,11 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                     response.data = {
                         'error': 'Se produjo un error en la solicitud. Por favor, revisa los datos enviados.'
                     }
-            print(response)
+            # print(response)
             return response
         except Exception as e:
             print(f"Excepción capturada: {e}")
-            return Response({'error': 'Ocurrió un error en la autenticación.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': 'Ocurrió un error al autenticar el usuario, verifica tu informacion'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     # def post(self, request, *args, **kwargs):
     #     # print(request._authenticate)
     #     response = super().post(request, *args, **kwargs)
@@ -200,17 +201,19 @@ class CustomTokenVerifyView(TokenVerifyView):
 
 
 class RegisterView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request, *args, **kwargs):
         if request.data['password'] != request.data['password_confirmation']:
             return Response({"error": "Las contraseñas no coinciden"}, status=status.HTTP_400_BAD_REQUEST)
 
         user_serializer = UserCustomizeSerializer(
-            data={'email': request.data['email'], 'password': request.data['password'], 'role': request.data['role']} #aqui debo poner por defecto 3
+            data={'email': request.data['email'], 'password': request.data['password'], 'role': 3} #aqui debo poner por defecto 3
         )
         #
         if user_serializer.is_valid():
             # print("we here")
             user = user_serializer.save()
+            print(user.id)
             profile_data = {
                 'nombre': request.data['nombre'],
                 'apellidoP': request.data['apellidoP'],
@@ -225,6 +228,17 @@ class RegisterView(APIView):
         else:
             # print(user_serializer.errors)
             return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        user_serealizer = UserCustomizeSerializer(user)
+        if user and user_serealizer:
+            return Response({"user": user_serealizer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Se genero un error al recuperar al usuario"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class LogoutView(APIView):
