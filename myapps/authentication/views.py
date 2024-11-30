@@ -166,6 +166,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 
 class CustomTokenRefreshView(TokenRefreshView):
+    permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
         refresh_token = request.COOKIES.get('refresh')
 
@@ -239,6 +240,15 @@ class ProfileView(APIView):
             return Response({"user": user_serealizer.data}, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Se genero un error al recuperar al usuario"}, status=status.HTTP_404_NOT_FOUND)
+
+class CheckUser(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        if user.is_authenticated:
+            return Response({"isauth": True}, status=status.HTTP_200_OK)
+        else:
+            return Response({}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class LogoutView(APIView):
