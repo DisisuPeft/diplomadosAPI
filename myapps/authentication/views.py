@@ -120,8 +120,8 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                     response.data = {
                         'error': 'Se produjo un error en la solicitud. Por favor, revisa los datos enviados.'
                     }
-            # print(response)
             return response
+            # return Response({"message": "SignIn exitoso."})
         except Exception as e:
             print(f"Excepción capturada: {e}")
             return Response({'error': 'Ocurrió un error al autenticar el usuario, verifica tu informacion'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -249,6 +249,17 @@ class CheckUser(APIView):
             return Response({"isauth": True}, status=status.HTTP_200_OK)
         else:
             return Response({}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+# class UserInfor(APIView):
+#     permission_classes = [IsAuthenticated]
+#     def get(self, request, *args, **kwargs):
+#         user = request.user
+#         usuario = UserCustomizeSerializer(user)
+#         if user.is_authenticated:
+#             return Response({"user": usuario.data}, status=status.HTTP_200_OK)
+#         else:
+#             return Response({"error": "Usuario no encontrado"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class LogoutView(APIView):
