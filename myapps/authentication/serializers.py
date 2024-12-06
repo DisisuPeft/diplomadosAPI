@@ -47,7 +47,11 @@ class PermissionCustomizeSerializer(serializers.ModelSerializer):
 
 class UserCustomizeSerializer(serializers.ModelSerializer):
     profile = ProfileSerializer(required=False) #para que me devuelva al usuario
-    role = serializers.IntegerField(required=False) #para que pueda guardar el role como numero
+    role = serializers.ListField(
+        child=serializers.IntegerField(),  # Cada elemento debe ser un entero
+        required=False,  # No es obligatorio
+        allow_empty=True  # Permite una lista vacía
+    )
     roleID = RoleCustomizeSerializer(many=True, required=False) #para devolver el rol en la respuesta
     class Meta:
         model = UserCustomize
@@ -71,7 +75,7 @@ class UserCustomizeSerializer(serializers.ModelSerializer):
 
 
     def create(self, validated_data):
-        role_id = validated_data.pop('role', None)
+        role_ids = validated_data.pop('role', [])
         # print(role_id)
         try:
             with transaction.atomic():
@@ -80,12 +84,18 @@ class UserCustomizeSerializer(serializers.ModelSerializer):
                     email=validated_data['email'],
                     password=validated_data['password'],
                 )
-                if role_id is not None:
+                if role_ids:
                     try:
-                        role = Roles.objects.get(id=role_id)
-                        user.roleID.add(role)
+                        roles = Roles.objects.filter(id__in=role_ids)
+                        if len(roles) != len(role_ids):
+                            raise serializers.ValidationError("Uno o más roles no existen")
+                    
+                    # Agregar múltiples roles
+                        user.roleID.add(*roles)
+                
                     except Roles.DoesNotExist:
-                        raise serializers.ValidationError("El rol especificado no existe")
+                        raise serializers.ValidationError("Alguno de los roles especificados no existe")
+            
                 return user
         except Exception as e:
             raise serializers.ValidationError(str(e))
@@ -98,4 +108,8 @@ class UserCustomizeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("El email ya se encuentra registrado")
         return value
 
-
+    def update(self, instance, validated_data):
+        if 'password' in validated_data:
+            instance.set_password(validated_data['password'])
+            validated_data.pop('password')
+        return super().update(instance, validated_data)

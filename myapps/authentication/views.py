@@ -208,13 +208,13 @@ class RegisterView(APIView):
             return Response({"error": "Las contraseñas no coinciden"}, status=status.HTTP_400_BAD_REQUEST)
 
         user_serializer = UserCustomizeSerializer(
-            data={'email': request.data['email'], 'password': request.data['password'], 'role': 3} #aqui debo poner por defecto 3
+            data={'email': request.data['email'], 'password': request.data['password'], 'role': [3]} #aqui debo poner por defecto 3
         )
         #
         if user_serializer.is_valid():
             # print("we here")
             user = user_serializer.save()
-            print(user.id)
+            # print(user.id)
             profile_data = {
                 'nombre': request.data['nombre'],
                 'apellidoP': request.data['apellidoP'],
