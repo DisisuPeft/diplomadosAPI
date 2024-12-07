@@ -42,18 +42,23 @@ class UsuariosAdministrador(APIView):
             return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
         
         # # Preparar datos para actualización
-        user_data = {}
+        # user_data = {}
         profile_data = {}
         
         # # Campos de usuario
         if 'email' in request.data and request.data['email']:
-            user_data['email'] = request.data['email']
+            user.email = request.data['email']
         
         if 'password' in request.data and request.data['password']:
-            user_data['password'] = request.data['password']
-
+            user.set_password(request.data['password'])
         if 'role' in request.data and request.data['role']:
-            user_data['role'] = request.data['role']
+            role = request.data['role']
+            separated = role.split(',')
+            user.roleID.add(*separated)
+        
+        user.save()
+        # if 'role' in request.data and request.data['role']:
+        #     user.role = request.data['role']
         
         # # Campos de perfil
         perfil_campos = [
@@ -69,12 +74,11 @@ class UsuariosAdministrador(APIView):
                 #     profile_data[campo] = request.data[campo]
         
         # # Serializers para actualización
-        user_serializer = UserCustomizeSerializer(
-            user, 
-            data=user_data, 
-            partial=True  # Permite actualizaciones parciales
-        )
-        
+        # user_serializer = UserCustomizeSerializer(
+        #     user, 
+        #     data=user_data, 
+        #     partial=True  # Permite actualizaciones parciales
+        # )
         profile_serializer = ProfileSerializer(
             profile, 
             data=profile_data, 
@@ -83,9 +87,9 @@ class UsuariosAdministrador(APIView):
         
         try:
         #     # Validar y guardar
-            if user_data:
-                if user_serializer.is_valid():
-                    user_serializer.save()
+            # if user_data:
+            #     if user_serializer.is_valid():
+            #         user_serializer.save()
             
             if profile_data:
                 if profile_serializer.is_valid():

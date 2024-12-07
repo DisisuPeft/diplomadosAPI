@@ -53,10 +53,6 @@ class UserCustomizeSerializer(serializers.ModelSerializer):
         allow_empty=True  # Permite una lista vacía
     )
     roleID = RoleCustomizeSerializer(many=True, required=False) #para devolver el rol en la respuesta
-    class Meta:
-        model = UserCustomize
-        fields = ["id", "email", "password", "profile", "role", "roleID"]
-
     email = serializers.CharField(
         required=True,
         error_messages={
@@ -72,11 +68,14 @@ class UserCustomizeSerializer(serializers.ModelSerializer):
             'required': "La contraseña es obligatoria."
         }
     )
-
+    class Meta:
+        model = UserCustomize
+        fields = ["id", "email", "password", "profile", "role", "roleID"]
 
     def create(self, validated_data):
         role_ids = validated_data.pop('role', [])
         # print(role_id)
+        # print(validated_data)
         try:
             with transaction.atomic():
 
@@ -101,15 +100,22 @@ class UserCustomizeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(str(e))
 
     # def update(self, instance, validated_data):
-        # instance.perfil_id = validated_data['id']
+    #     print(instance)
+    #     roles = validated_data.pop('role', [])
+    #     # print(role)
+    #     if 'password' in validated_data:
+    #         instance.set_password(validated_data['password'])
+    #         validated_data.pop('password')
+        
+    #     instance = super().update(instance, validated_data)
+
+    #     # print(instance.role)
+
+    #     return instance
 
     def validate_email(self, value):
         if UserCustomize.objects.filter(email=value).exists():
             raise serializers.ValidationError("El email ya se encuentra registrado")
         return value
 
-    def update(self, instance, validated_data):
-        if 'password' in validated_data:
-            instance.set_password(validated_data['password'])
-            validated_data.pop('password')
-        return super().update(instance, validated_data)
+

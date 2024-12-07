@@ -70,6 +70,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         # Actualizar todos los campos que vengan en validated_data
+        # print(instance)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         
