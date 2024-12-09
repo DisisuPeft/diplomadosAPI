@@ -24,5 +24,6 @@ urlpatterns = [
     # path('register', auth_views.register, name='register'),
     path('api/', include('myapps.authentication.urls')),
     path('api/', include('myapps.administrador.urls')),
+    path('api/', include('myapps.perfil.urls')),
     # path('perfil', perfil_views.getprofile, name='perfil'),
 ]

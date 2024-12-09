@@ -30,6 +30,57 @@ class UsuariosAdministrador(APIView):
         serializer = UserCustomizeSerializer(usuarios, many=True)
         return Response({"users": serializer.data}, status=status.HTTP_200_OK)  
     
+    
+    def post(self, request, *args, **kwargs):
+        # print(request.data)
+        role = [int(roles) for roles in request.data['role']]
+        user_dict = {}
+        perfil_dict = {}
+        user_headers = ['email', 'password']
+        perfil_headers = [
+            "nombre", "apellidoP", "apellidoM", "edad", 
+            "fechaNacimiento", "genero", "nivEdu", "telefono"
+        ]
+
+        for i in user_headers:
+            if i in request.data and request.data[i]:
+                user_dict[i] = request.data[i]
+        user_dict['role'] = role
+        user_serializer = UserCustomizeSerializer(data=user_dict)
+        
+        if user_serializer.is_valid():
+            user_instance = user_serializer.save()
+            for p in perfil_headers:
+                if p in request.data and request.data[p]:
+                    perfil_dict[p] = request.data[p]
+            perfil_dict['user'] = user_instance.id
+            # perfil_data = {
+            #     'nombre': request.data['nombre'],
+            #     'apellidoP': request.data['apellidoP'],
+            #     'apellidoM': request.data['apellidoM'], 
+            #     'edad': request.data['edad'], 
+            #     'fechaNacimiento': request.data['fechaNacimiento'], 
+            #     'genero': request.data['genero'], 
+            #     'nivEdu': request.data['nivEdu'], 
+            #     'telefono':request.data['telefono'],
+            #     'user': user_instance.id,
+            # }
+            # print(user_instance.id)
+            perfil_serializer = ProfileSerializer(data=perfil_dict)
+            if perfil_serializer.is_valid():
+                perfil_serializer.save()
+                return Response({"message": "Usuario creado con exito"}, status=status.HTTP_201_CREATED)
+            else:
+                return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)        
+        
+        # print(user_dict)
+        # return Response({"info": "No content"}, status=status.HTTP_204_NO_CONTENT)
+        
+
+
+
     def patch(self, request, *args, **kwargs):
         user_id = request.data['id']  
         
@@ -54,6 +105,7 @@ class UsuariosAdministrador(APIView):
         if 'role' in request.data and request.data['role']:
             role = request.data['role']
             separated = role.split(',')
+            user.roleID.clear()
             user.roleID.add(*separated)
         
         user.save()
