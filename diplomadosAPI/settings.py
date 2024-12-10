@@ -80,6 +80,9 @@ INSTALLED_APPS = [
     'corsheaders',
     'myapps.authentication',
     'myapps.perfil',
+    'myapps.docente',
+    'myapps.administrador',
+    'myapps.cursos'
 ]
 
 MIDDLEWARE = [

@@ -8,6 +8,7 @@ from .views import (
 urlpatterns = [
 
     path('users/myprofile/', ProfileOpt.as_view(), name="get"),
+    path('users/myprofile/edit/', ProfileOpt.as_view(), name="patch"),
     # path('admin/usuarios/editar/', UsuariosAdministrador.as_view(), name="patch"),
     # path('admin/usuarios/crear/', UsuariosAdministrador.as_view(), name="post"),
     # path('auth/refresh/', CustomTokenRefreshView.as_view()),
