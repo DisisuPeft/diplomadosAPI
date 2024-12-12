@@ -54,19 +54,6 @@ class ProfileSerializer(serializers.ModelSerializer):
     #     return data
     
     def create(self, validated_data):
-        # profile = Profile.objects.create(
-        # nombre=validated_data['nombre'],
-        # apellidoP=validated_data['apellidoP'],
-        # apellidoM=validated_data['apellidoM'],
-        # edad=validated_data['edad'],
-        # fechaNacimiento=validated_data['fechaNacimiento'],
-        # genero=validated_data['genero'],
-        # nivEdu=validated_data['nivEdu'],
-        # telefono=validated_data['telefono'],
-        # userID=validated_data['userID']
-        # )
-        # profile.save()
-        # return profile
         user = validated_data.pop('user', None)
     
         # Crear el perfil

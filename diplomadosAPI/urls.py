@@ -25,5 +25,6 @@ urlpatterns = [
     path('api/', include('myapps.authentication.urls')),
     path('api/', include('myapps.administrador.urls')),
     path('api/', include('myapps.perfil.urls')),
+    path('api/', include('myapps.cursos.urls')),
     # path('perfil', perfil_views.getprofile, name='perfil'),
 ]
