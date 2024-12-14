@@ -27,7 +27,7 @@ class EducationalProgram(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(max_length=500)
     category = models.ForeignKey(
-        Category, on_delete=models.SET_NULL, related_name="programs", null=True
+        Category, on_delete=models.SET_NULL, related_name="categorys", null=True
     )
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
@@ -36,6 +36,24 @@ class EducationalProgram(models.Model):
     duration = models.PositiveIntegerField(null=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     max_capacity = models.PositiveIntegerField(null=True, blank=True)
+    # category = models.ForeignKey(
+    #     Category,
+    #     on_delete=models.SET_NULL,
+    #     related_name="category",
+    #     null=True,
+    # )
+    subcategory = models.ForeignKey(
+        SubCategory,
+        on_delete=models.SET_NULL,
+        related_name="educationalProgram",
+        null=True,
+    )
+    specification = models.ForeignKey(
+        Especification,
+        on_delete=models.SET_NULL,
+        related_name="educationalProgram",
+        null=True,
+    )
     # faltaria la inscripcion
     teacher = models.ManyToManyField(
         Teacher,

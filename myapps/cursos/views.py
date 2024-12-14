@@ -33,40 +33,43 @@ class CategoryView(APIView):
         return Response({"categorys": serializer.data}, status=status.HTTP_200_OK)
 
     def post(self, request):
-        category_dict = {
-            "name": request.data["nameCategory"],
-            "description": request.data["description"],
-        }
-
-        category_serializer = CategorySerializer(data=category_dict)
+        category_serializer = CategorySerializer(
+            data={
+                "name": request.data["nameCategory"],
+                "description": request.data["description"],
+            }
+        )
         if category_serializer.is_valid():
             category = category_serializer.save()
             # return Response(
             #     {"detail": category},
             #     status=status.HTTP_400_BAD_REQUEST,
             # )
-            subcategory_dict = {
-                "name": request.data["namesubCategory"],
-                "category": category.id,
-            }
-            subcategory = SubCategorySerializer(data=subcategory_dict)
+            subcategory = SubCategorySerializer(
+                data={
+                    "name": request.data["namesubCategory"],
+                    "category": category.id,
+                }
+            )
             if subcategory.is_valid():
                 instance_subcategory = subcategory.save()
-                especification = request.data["especification"].split(",")
-                print(instance_subcategory.id)
-                for row in range(len(especification)):
-                    esp = EspecificationSerializer(
-                        data={
-                            "name": especification[row],
-                            "subcategory": instance_subcategory.id,
-                        }
-                    )
-                    if esp.is_valid():
-                        esp.save()
-                return Response(
-                    {"detail": "data"},
-                    status=status.HTTP_200_OK,
-                )
+                if "especification" in request.data and request.data["especification"]:
+                    especification = request.data["especification"].split(",")
+                    # print(instance_subcategory.id)
+                    for row in range(len(especification)):
+                        esp_serializer = EspecificationSerializer(
+                            data={
+                                "name": especification[row],
+                                "subcategory": instance_subcategory.id,
+                            }
+                        )
+                        if esp_serializer.is_valid():
+                            esp_serializer.save()
+            return Response(
+                {"detail": "Categoria creada"},
+                status=status.HTTP_201_CREATED,
+            )
+
         else:
             return Response(
                 {"detail": category_serializer.errors},
@@ -75,43 +78,136 @@ class CategoryView(APIView):
 
     def patch(self, request):
         category_id = int(request.query_params.get("category_id"))
-        sub = request.data["namesubCategory"].split(",")
-        esp = request.data["especification"].split(",")
-
+        # print(request.data["nameCategory"])
+        cat_dict = {}
+        subcat_dict = {}
         category = Category.objects.get(id=category_id)
         if not category:
             return Response(
                 {"detail": "Categoria no encontrada"},
-                status=status.HTTP_200_OK,
+                status=status.HTTP_404_NOT_FOUND,
             )
+        if "nameCategory" in request.data and request.data["nameCategory"]:
+            cat_dict["name"] = request.data["nameCategory"]
+        if "description" in request.data and request.data["description"]:
+            cat_dict["description"] = request.data["description"]
         category_serializer = CategorySerializer(
             category,
-            data={
-                "name": request.data["nameCategory"],
-                "description": request.data["description"],
-            },
+            data=cat_dict,
+            partial=True,
         )
+
         if category_serializer.is_valid():
-            subca = SubCategory.objects.filter(category=category.id)
-            # print(subca)
-            if not subca:
-                return Response(
-                    {"detail": "Subcategoria no encontrada"},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
-            for s in subca:
-                for row in range(len(sub)):
-                    subcategory_serializer = SubCategorySerializer(
-                        s, data={"name": sub[row], "category": category.id}
+            category_save = category_serializer.save()
+            if "namesubCategory" in request.data and request.data["namesubCategory"]:
+                subcat_dict["name"] = request.data["namesubCategory"]
+                subcat_dict["category"] = category_save.id
+                # if "subcategory_id" in request.data and request.data["subcategory_id"]:
+                # try:
+                subcategory = None
+                sub_serializer = None
+                if (
+                    "subcategory_id" in request.data
+                    and request.data["subcategory_id"] != "null"
+                ):
+                    # print(request.data["subcategory_id"])
+                    subcategory = SubCategory.objects.get(
+                        id=request.data["subcategory_id"]
                     )
-                    if subcategory_serializer.is_valid():
+                if subcategory == None:
+                    sub_serializer = SubCategorySerializer(data=subcat_dict)
+                    if sub_serializer.is_valid():
                         pass
-                    else:
-                        return Response(
-                            {"detail": subcategory_serializer.errors},
-                            status=status.HTTP_400_BAD_REQUEST,
+                sub_serializer = SubCategorySerializer(
+                    subcategory, data=subcat_dict, partial=True
+                )
+                if sub_serializer.is_valid():
+                    pass
+                sub = sub_serializer.save()
+                if "especification" in request.data and request.data["especification"]:
+                    try:
+                        # especification = Especification.objects.filter(
+                        #     subcategory=sub.id
+                        # )
+                        espslice = request.data["especification"].split(",")
+                        esp = EspecificationSerializer()
+                        result = esp.update_especifications(
+                            subcategory=sub,
+                            especifications=espslice,
                         )
-            first_subcategory = subca.first()
+                        if result:
+                            pass
+                        else:
+                            print(result)
+                            return Response(
+                                {
+                                    "detail": f"Error al actualizar porque el resultado es {result}"
+                                },
+                                status=status.HTTP_400_BAD_REQUEST,
+                            )
+                            # print(esp)
+                            # for row in especification:
+                            #     for col in range(len(esp)):
+                            #         # print(sub.id)
+                            #         esp_serializer = EspecificationSerializer(
+                            #             row,
+                            #             data={
+                            #                 "name": esp[col],
+                            #                 "subcategory": sub.id,
+                            #             },
+                            #         )
+                            #         if esp_serializer.is_valid():
+                            #             esp_serializer.save()
+
+                    except Especification.DoesNotExist:
+                        especification = None
+                else:
+                    return Response(
+                        {"detail": sub_serializer.errors},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            return Response(
+                {"message": "Categoria editada con exito"},
+                status=status.HTTP_200_OK,
+            )
+            # if "subcategory_id" in request.data and request.data["subcategory_id"]:
+            #     try:
+            #         subcategory = SubCategory.objects.get(id=request.data["subcategory_id"])
+            #     except SubCategory.DoesNotExist:
+            #         subcategory = None
+            # else:
+            #     # Obtener la primera subcategoría de la categoría o None
+            #     subcategory = SubCategory.objects.filter(category=category.id).first()
+            # if not subcategory:
+            #     if (
+            #         "namesubCategory" in request.data
+            #         and request.data["namesubCategory"]
+            #     ):
+            #         subcat_dict["name"] = request.data["namesubCategory"]
+            #     subcat_dict["category"] = category.id
+            #     sub_create = SubCategorySerializer(data=subcat_dict)
+            #     if sub_create.is_valid():
+            #         subcategory_created = sub_create.save()
+            #     else:
+            #         return Response(
+            #             {"detail": "No se guardaron los cambios"},
+            #             status=status.HTTP_400_BAD_REQUEST,
+            #         )
+
+            # for s in subca:
+            #     for row in range(len(sub)):
+            #         subcategory_serializer = SubCategorySerializer(
+            #             s, data={"name": sub[row], "category": category.id}
+            #         )
+            #         if subcategory_serializer.is_valid():
+            #             pass
+            #         else:
+            #             return Response(
+            #                 {"detail": subcategory_serializer.errors},
+            #                 status=status.HTTP_400_BAD_REQUEST,
+            #             )
+            # first_subcategory = subca.first()
             # esp_instance = Especification.objects.filter(subcategory=one.id)
             # en este caso porque solo existe una sola subcategoria pero cuando existan mas? en ese caso va a suceder
             # if not esp_instance:
@@ -137,7 +233,19 @@ class CategoryView(APIView):
                 {"detail": category_serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        return Response(
-            {"detail": "Categorias actualizadas"},
-            status=status.HTTP_200_OK,
-        )
+
+        # especification = request.data["especification"].split(",")
+        # # print(instance_subcategory.id)
+        # for row in range(len(especification)):
+        #     esp = EspecificationSerializer(
+        #         data={
+        #             "name": especification[row],
+        #             "subcategory": instance_subcategory.id,
+        #         }
+        #     )
+        #     if esp.is_valid():
+        #         esp.save()
+        # return Response(
+        #     {"detail": "data"},
+        #     status=status.HTTP_200_OK,
+        # )

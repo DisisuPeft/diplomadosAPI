@@ -7,6 +7,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
 from rest_framework import exceptions
 from myapps.cursos.models import Category, SubCategory, Especification
+from django.db import transaction
 
 
 class EspecificationSerializer(serializers.ModelSerializer):
@@ -23,8 +24,50 @@ class EspecificationSerializer(serializers.ModelSerializer):
         return esp
 
     def update(self, instance, validated_data):
-        instance.name = validated_data.get("name", instance.name)
+        subcategory = validated_data.pop("subcategory")
+        # print(type(subcategory))
+        instance.name = validated_data["name"]
+        instance.subcategory = subcategory
+        instance.save()
         return instance
+
+    def update_especifications(self, subcategory, especifications):
+        try:
+            with transaction.atomic():
+                especifications_existend = Especification.objects.filter(
+                    subcategory=subcategory.id
+                )
+                new_names = set(especifications)
+                # print(especifications_existend, new_names)
+                if not especifications_existend:
+                    newEspec = [
+                        Especification(name=name, subcategory=subcategory)
+                        for name in new_names
+                    ]
+                    if newEspec:
+                        Especification.objects.bulk_create(newEspec)
+                        return True
+
+                actual_names = set(
+                    especifications_existend.values_list("name", flat=True)
+                )
+                esp_to_delete = especifications_existend.exclude(name__in=new_names)
+                esp_to_delete.delete()
+                to_create = new_names - actual_names
+                # print(esp_to_delete)
+                updateEsp = [
+                    Especification(name=name, subcategory=subcategory)
+                    for name in to_create
+                ]
+                if updateEsp:
+                    Especification.objects.bulk_create(updateEsp)
+                return True
+                # especification = Especification.objects.bulk_create(especifications)
+                # print(subcategory)
+        except Exception as e:
+            raise serializers.ValidationError(
+                f"Error al actualizar especificaciones: {str(e)}"
+            )
 
 
 class SubCategorySerializer(serializers.ModelSerializer):
@@ -32,7 +75,7 @@ class SubCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SubCategory
-        fields = ["name", "category", "especification"]
+        fields = ["id", "name", "category", "especification"]
 
     def create(self, validated_data):
         category = validated_data.pop("category", None)
@@ -43,18 +86,42 @@ class SubCategorySerializer(serializers.ModelSerializer):
         return sub_category
 
     def update(self, instance, validated_data):
-        print(instance.name)
-        instance.name = validated_data.get("name", instance.name)
-        instance.category = validated_data.get("category", instance.category)
+        # print(instance.name)
+        category = validated_data.pop("category", None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.category = category
+        instance.save()
         return instance
 
 
 class CategorySerializer(serializers.ModelSerializer):
     subcategory = SubCategorySerializer(many=True, required=False, read_only=True)
+    # subcategory_id = serializers.IntegerField(write_only=True, required=False)
 
     class Meta:
         model = Category
         fields = ["id", "name", "description", "subcategory"]
+
+    def validate(self, attrs):
+        # c = Category.objects.filter(name=attrs["name"])
+        # if c.exists():
+        #     raise serializers.ValidationError(
+        #         {"name": "Ya existe una categoría con este nombre."}
+        #     )
+        # elif self.instance is not None:
+        #     existing = existing.exclude(pk=self.instance.pk)
+        # return attrs
+        existing = Category.objects.filter(name=attrs["name"])
+        if self.instance is not None:
+            existing = existing.exclude(pk=self.instance.id)
+
+        if existing.exists():
+            raise serializers.ValidationError(
+                {"name": "Ya existe una categoría con este nombre."}
+            )
+        return attrs
 
     def create(self, validated_data):
         # print(valideted_data)
@@ -62,9 +129,14 @@ class CategorySerializer(serializers.ModelSerializer):
         return category
 
     def update(self, instance, validated_data):
-        instance.name = validated_data.get("name", instance.name)
-        instance.description = validated_data.get("description", instance.description)
+        # print(instance.name, validated_data.get("name", instance.name))
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
         return instance
+
+    # def many_categorys(self, ):
 
     # revisar
     # def update(self, instance, validated_data):
