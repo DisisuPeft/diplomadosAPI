@@ -6,14 +6,19 @@ from django.db import transaction
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
 from rest_framework import exceptions
-from myapps.cursos.models import Category, SubCategory, Especification
+from myapps.cursos.models import (
+    Category,
+    SubCategory,
+    Especification,
+    EducationalProgram,
+)
 from django.db import transaction
 
 
 class EspecificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Especification
-        fields = ["name", "subcategory"]
+        fields = ["id", "name", "subcategory"]
 
     def create(self, validated_data):
         subca = validated_data.pop("subcategory", None)
@@ -147,3 +152,42 @@ class CategorySerializer(serializers.ModelSerializer):
 
     #     instance.save()
     #     return instance
+
+
+class EducationalProgramSerializer(serializers.ModelSerializer):
+    category = CategorySerializer(required=True)
+    subcategory = SubCategorySerializer(required=True)
+    specification = EspecificationSerializer(required=True)
+    start_date = serializers.DateField(required=False, allow_null=True)
+    end_date = serializers.DateField(required=False, allow_null=True)
+    hour_start = serializers.TimeField(required=False, allow_null=True)
+    hour_end = serializers.TimeField(required=False, allow_null=True)
+    duration = serializers.IntegerField(required=False, allow_null=True)
+    price = serializers.DecimalField(
+        required=False, allow_null=True, max_digits=10, decimal_places=2, default=0.00
+    )
+    max_capacity = serializers.IntegerField(required=False, allow_null=True)
+
+    class Meta:
+        model = EducationalProgram
+        fields = "__all__"
+
+    def create(self, validated_data):
+        try:
+            with transaction.atomic():
+                category = validated_data.pop("category", None)
+                subcategory = validated_data.pop("subcategory", None)
+                specification = validated_data.pop("specification", None)
+                education_program = EducationalProgram.objects.create(**validated_data)
+                c = Category.objects.get(id=category)
+                s = SubCategory.objects.get(id=subcategory)
+                spe = Especification.objects.get(id=specification)
+                education_program.category = c
+                education_program.subcategory = s
+                education_program.specification = spe
+                education_program.save()
+                return education_program
+        except Exception as e:
+            raise serializers.ValidationError(
+                f"Error al crear el programa educacional: {str(e)}"
+            )

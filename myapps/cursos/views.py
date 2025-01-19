@@ -6,14 +6,74 @@ from myapps.authentication.serializers import UserCustomizeSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import generics, status
-from myapps.cursos.models import Category, SubCategory, Especification
+from myapps.cursos.models import (
+    Category,
+    SubCategory,
+    Especification,
+    EducationalProgram,
+)
 from myapps.cursos.serializers import (
     CategorySerializer,
     SubCategorySerializer,
     EspecificationSerializer,
+    EducationalProgramSerializer,
 )
 
 # Create your views here.
+
+
+class EducationalProgramView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+        HasRoleWithRoles(["Administrador", "Docente"]),
+    ]
+
+    def get(self, request):
+        edu = EducationalProgram.objects.all()
+        if not edu:
+            return Response(
+                {"error": "No existen programas disponibles"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        serializer = EducationalProgramSerializer(edu, many=True)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    def get_educationalProgram(self, request):
+        ed_id = request.GET.get("id")
+        educational = EducationalProgram.objects.get(id=ed_id)
+        if not educational:
+            return Response(
+                {"error": "Este programa educacional no existe"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        serializer = EducationalProgramSerializer(educational)
+        return Response({"program": serializer.data}, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = EducationalProgramSerializer()
+        edprogram = {}
+        for row in request.data:
+            if (
+                row in request.data
+                and request.data[row]
+                and request.data[row] != "null"
+            ):
+                edprogram[row] = request.data[row]
+        edprogram["status"] = 0
+        educational_program = serializer.create(validated_data=edprogram)
+        if educational_program:
+            pass
+        else:
+            return Response(
+                {"detail": educational_program}, status=status.HTTP_400_BAD_REQUEST
+            )
+        # print(educationalprogram)
+        return Response(
+            {"detail": "Recurso creado con exito"}, status=status.HTTP_200_OK
+        )
 
 
 class CategoryView(APIView):

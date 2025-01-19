@@ -60,6 +60,9 @@ class EducationalProgram(models.Model):
         related_name="programs",
     )
     status = models.IntegerField(null=True, blank=True)
-    tutor = models.ManyToManyField(UserCustomize, related_name="tutor")
+    tutor = models.ForeignKey(
+        UserCustomize, on_delete=models.SET_NULL, related_name="tutor", null=True
+    )
+    image = models.ImageField(null=True, blank=True)
     # resources = models.ManyToManyField(Resource, related_name="programs")
     # certification = models.BooleanField(default=False)
