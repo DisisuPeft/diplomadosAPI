@@ -7,6 +7,8 @@ from myapps.authentication.models import UserCustomize
 class Category(models.Model):
     name = models.CharField(max_length=100)
     description = models.CharField(max_length=255, null=True, blank=True)
+    created_at = models.DateField(null=True, blank=True)
+    updated_at = models.DateField(null=True, blank=True)
 
 
 class SubCategory(models.Model):
@@ -14,6 +16,8 @@ class SubCategory(models.Model):
     category = models.ForeignKey(
         Category, on_delete=models.SET_NULL, related_name="subcategory", null=True
     )
+    created_at = models.DateField(null=True, blank=True)
+    updated_at = models.DateField(null=True, blank=True)
 
 
 class Especification(models.Model):
@@ -21,6 +25,8 @@ class Especification(models.Model):
     subcategory = models.ForeignKey(
         SubCategory, on_delete=models.SET_NULL, related_name="especification", null=True
     )
+    created_at = models.DateField(null=True, blank=True)
+    updated_at = models.DateField(null=True, blank=True)
 
 
 class EducationalProgram(models.Model):
@@ -36,12 +42,6 @@ class EducationalProgram(models.Model):
     duration = models.PositiveIntegerField(null=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     max_capacity = models.PositiveIntegerField(null=True, blank=True)
-    # category = models.ForeignKey(
-    #     Category,
-    #     on_delete=models.SET_NULL,
-    #     related_name="category",
-    #     null=True,
-    # )
     subcategory = models.ForeignKey(
         SubCategory,
         on_delete=models.SET_NULL,
@@ -66,3 +66,9 @@ class EducationalProgram(models.Model):
     image = models.ImageField(null=True, blank=True)
     # resources = models.ManyToManyField(Resource, related_name="programs")
     # certification = models.BooleanField(default=False)
+    # category = models.ForeignKey(
+    #     Category,
+    #     on_delete=models.SET_NULL,
+    #     related_name="category",
+    #     null=True,
+    # )
